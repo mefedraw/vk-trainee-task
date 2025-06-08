@@ -6,24 +6,36 @@ import (
 )
 
 type Worker struct {
-	ID       int
-	dataChan chan string
+	ID int
+	wg *sync.WaitGroup
 }
 
-func NewWorker(ID int, ch chan string) *Worker {
+func NewWorker(id int, wg *sync.WaitGroup) *Worker {
 	return &Worker{
-		ID:       ID,
-		dataChan: ch,
+		ID: id,
+		wg: wg,
 	}
 }
 
-func (w *Worker) Start(wg *sync.WaitGroup) {
-	wg.Add(1)
+func (w *Worker) LaunchWorker(in chan string, stopCh chan struct{}) {
 	go func() {
-		defer wg.Done()
-		for str := range w.dataChan {
-			fmt.Printf("worker id: %d; data: %s\n", w.ID, str)
+		defer w.wg.Done()
+		for {
+			select {
+			case <-stopCh:
+				fmt.Printf("worker №%d stopped\n", w.ID)
+				return
+			case str, ok := <-in:
+				if !ok {
+					fmt.Printf("worker №%d stopped\n", w.ID)
+					return
+				}
+				w.Process(str)
+			}
 		}
 	}()
+}
 
+func (w *Worker) Process(str string) {
+	fmt.Printf("string %s was processed by worker №%d\n", str, w.ID)
 }

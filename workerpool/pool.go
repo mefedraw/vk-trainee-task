@@ -1,39 +1,63 @@
 ﻿package workerpool
 
-import "sync"
+import (
+	"fmt"
+	"sync"
+)
+
+type WorkerLauncher interface {
+	LaunchWorker(in chan string, stopCh chan struct{})
+}
 
 type Pool struct {
-	Strings   []string
-	workerNum int
-	collector chan string
+	inCh      chan string
+	stopCh    chan struct{}
 	wg        *sync.WaitGroup
+	mu        sync.Mutex
+	workerNum int
 }
 
-func NewPool(workerNum int, strings []string) *Pool {
+func NewPool(maxWorkers int, wg *sync.WaitGroup) *Pool {
 	return &Pool{
-		Strings:   strings,
-		workerNum: workerNum,
-		collector: make(chan string, 1000),
-		wg:        &sync.WaitGroup{},
+		inCh:      make(chan string),
+		stopCh:    make(chan struct{}, maxWorkers),
+		workerNum: 0,
+		mu:        sync.Mutex{},
+		wg:        wg,
 	}
 }
 
-func (p *Pool) AddWorker(amount int) {
-	p.workerNum += amount
+func (p *Pool) Run(n int) {
+	for i := 1; i <= n; i++ {
+		p.AddWorker()
+	}
 }
 
-func (p *Pool) DecrementWorker(amount int) {
-	p.workerNum -= amount
+func (p *Pool) AddJob(str string) {
+	p.inCh <- str
 }
 
-func (p *Pool) Run() {
-	for i := 1; i <= p.workerNum; i++ {
-		worker := NewWorker(i, p.collector)
-		worker.Start(p.wg)
+func (p *Pool) AddWorker() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.workerNum++
+	w := NewWorker(p.workerNum, p.wg)
+	p.wg.Add(1)
+	w.LaunchWorker(p.inCh, p.stopCh)
+}
+
+func (p *Pool) RemoveWorker() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.workerNum == 0 {
+		return
 	}
-	for i := range p.Strings {
-		p.collector <- p.Strings[i]
-	}
-	close(p.collector)
+	p.workerNum--
+	p.stopCh <- struct{}{}
+}
+
+func (p *Pool) Stop() {
+	close(p.inCh)
 	p.wg.Wait()
+	fmt.Println("pool stopped")
 }
