@@ -1,4 +1,4 @@
-module vk-trainee-task
+module github.com/mefedraw/vk-trainee-task
 
 go 1.23
 

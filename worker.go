@@ -1,4 +1,4 @@
-﻿package workerpool
+﻿package vk_trainee_task
 
 import (
 	"fmt"
@@ -7,19 +7,17 @@ import (
 
 type Worker struct {
 	ID int
-	wg *sync.WaitGroup
 }
 
-func NewWorker(id int, wg *sync.WaitGroup) *Worker {
+func NewWorker(id int) *Worker {
 	return &Worker{
 		ID: id,
-		wg: wg,
 	}
 }
 
-func (w *Worker) LaunchWorker(in chan string, stopCh chan struct{}) {
+func (w *Worker) LaunchWorker(in chan string, stopCh chan struct{}, wg *sync.WaitGroup) {
 	go func() {
-		defer w.wg.Done()
+		defer wg.Done()
 		for {
 			select {
 			case <-stopCh:

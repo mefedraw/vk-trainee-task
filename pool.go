@@ -1,4 +1,4 @@
-﻿package workerpool
+﻿package vk_trainee_task
 
 import (
 	"fmt"
@@ -41,9 +41,9 @@ func (p *Pool) AddWorker() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.workerNum++
-	w := NewWorker(p.workerNum, p.wg)
+	w := NewWorker(p.workerNum)
 	p.wg.Add(1)
-	w.LaunchWorker(p.inCh, p.stopCh)
+	w.LaunchWorker(p.inCh, p.stopCh, p.wg)
 }
 
 func (p *Pool) RemoveWorker() {

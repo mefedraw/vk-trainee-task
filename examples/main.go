@@ -2,9 +2,9 @@
 
 import (
 	"github.com/brianvoe/gofakeit"
+	vk_trainee_task "github.com/mefedraw/vk-trainee-task"
 	"runtime"
 	"sync"
-	"vk-trainee-task/workerpool"
 )
 
 func main() {
@@ -14,9 +14,9 @@ func main() {
 
 	maxWorkers := numCPU * 2
 	workers := 3
-	jobsCnt := 3000
+	jobsCnt := 10000
 
-	wp := workerpool.NewPool(maxWorkers, wg)
+	wp := vk_trainee_task.NewPool(maxWorkers, wg)
 	wp.Run(workers)
 
 	for i := 0; i < jobsCnt; i++ {
