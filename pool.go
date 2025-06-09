@@ -9,6 +9,7 @@ type WorkerLauncher interface {
 	LaunchWorker(in chan string, stopCh chan struct{})
 }
 
+// Pool - структура пула
 type Pool struct {
 	inCh      chan string
 	stopCh    chan struct{}
@@ -18,6 +19,7 @@ type Pool struct {
 	isClosed  bool
 }
 
+// NewPool создает новый объект пула, но не запускает его
 func NewPool(wg *sync.WaitGroup) *Pool {
 	return &Pool{
 		inCh:      make(chan string),
@@ -28,12 +30,14 @@ func NewPool(wg *sync.WaitGroup) *Pool {
 	}
 }
 
+// Run принимает начальное кол-во воркеров, которых в последствии запускает
 func (p *Pool) Run(n int) {
 	for i := 1; i <= n; i++ {
 		p.AddWorker()
 	}
 }
 
+// AddJob добавляет job в пул, паникует если пул закрыт или спит
 func (p *Pool) AddJob(str string) {
 	if p.workerNum == 0 {
 		panic("pool not started")
@@ -44,6 +48,7 @@ func (p *Pool) AddJob(str string) {
 	p.inCh <- str
 }
 
+// AddWorker добавляет одного воркера в пул
 func (p *Pool) AddWorker() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -53,6 +58,7 @@ func (p *Pool) AddWorker() {
 	w.LaunchWorker(p.inCh, p.stopCh, p.wg)
 }
 
+// RemoveWorker убирает одного воркера из пула, если их уже нуль, то ничего не происходит
 func (p *Pool) RemoveWorker() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -63,6 +69,7 @@ func (p *Pool) RemoveWorker() {
 	p.stopCh <- struct{}{}
 }
 
+// Stop останавливает пул и дает завершить работу оставшимся воркерам. Если пул уже закрыт, то паникует
 func (p *Pool) Stop() {
 	p.mu.Lock()
 	if p.isClosed {

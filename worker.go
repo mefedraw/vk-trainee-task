@@ -5,16 +5,19 @@ import (
 	"sync"
 )
 
+// Worker структура воркера
 type Worker struct {
 	ID int
 }
 
+// NewWorker создает воркера с ID
 func NewWorker(id int) *Worker {
 	return &Worker{
 		ID: id,
 	}
 }
 
+// LaunchWorker запускает воркера
 func (w *Worker) LaunchWorker(in <-chan string, stopCh chan struct{}, wg *sync.WaitGroup) {
 	go func() {
 		defer wg.Done()
@@ -34,6 +37,7 @@ func (w *Worker) LaunchWorker(in <-chan string, stopCh chan struct{}, wg *sync.W
 	}()
 }
 
+// Process обрабатывает job
 func (w *Worker) Process(str string) {
 	fmt.Printf("string %s was processed by worker №%d\n", str, w.ID)
 }
