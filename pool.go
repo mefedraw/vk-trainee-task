@@ -17,10 +17,10 @@ type Pool struct {
 	workerNum int
 }
 
-func NewPool(maxWorkers int, wg *sync.WaitGroup) *Pool {
+func NewPool(wg *sync.WaitGroup) *Pool {
 	return &Pool{
 		inCh:      make(chan string),
-		stopCh:    make(chan struct{}, maxWorkers),
+		stopCh:    make(chan struct{}),
 		workerNum: 0,
 		mu:        sync.Mutex{},
 		wg:        wg,
