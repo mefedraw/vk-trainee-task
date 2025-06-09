@@ -69,12 +69,12 @@ func (p *Pool) RemoveWorker() {
 	p.stopCh <- struct{}{}
 }
 
-// Stop останавливает пул и дает завершить работу оставшимся воркерам. Если пул уже закрыт, то паникует
+// Stop останавливает пул и дает завершить работу оставшимся воркерам
 func (p *Pool) Stop() {
 	p.mu.Lock()
 	if p.isClosed {
 		p.mu.Unlock()
-		panic("Pool already stopped")
+		return
 	}
 	close(p.inCh)
 	p.isClosed = true
