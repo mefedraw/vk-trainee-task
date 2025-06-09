@@ -24,4 +24,5 @@ func main() {
 	}
 
 	wp.Stop()
+	wp.Stop()
 }

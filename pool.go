@@ -1,6 +1,7 @@
 ﻿package vk_trainee_task
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 )
@@ -37,44 +38,51 @@ func (p *Pool) Run(n int) {
 	}
 }
 
-// AddJob добавляет job в пул, паникует если пул закрыт или спит
-func (p *Pool) AddJob(str string) {
+// AddJob добавляет job в пул, возвращает ошибку если пул закрыт или спит
+func (p *Pool) AddJob(str string) error {
 	if p.workerNum == 0 {
-		panic("pool not started")
+		return errors.New("zero active workers exists")
 	}
 	if p.isClosed {
-		panic("pool is closed")
+		return errors.New("pool is closed")
 	}
 	p.inCh <- str
+	return nil
 }
 
 // AddWorker добавляет одного воркера в пул
-func (p *Pool) AddWorker() {
+func (p *Pool) AddWorker() error {
 	p.mu.Lock()
+	if p.isClosed {
+		p.mu.Unlock()
+		return errors.New("pool is closed")
+	}
 	defer p.mu.Unlock()
 	p.workerNum++
 	w := NewWorker(p.workerNum)
 	p.wg.Add(1)
 	w.LaunchWorker(p.inCh, p.stopCh, p.wg)
+	return nil
 }
 
 // RemoveWorker убирает одного воркера из пула, если их уже нуль, то ничего не происходит
-func (p *Pool) RemoveWorker() {
+func (p *Pool) RemoveWorker() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.workerNum == 0 {
-		return
+		return errors.New("zero workers exists")
 	}
 	p.workerNum--
 	p.stopCh <- struct{}{}
+	return nil
 }
 
 // Stop останавливает пул и дает завершить работу оставшимся воркерам
-func (p *Pool) Stop() {
+func (p *Pool) Stop() error {
 	p.mu.Lock()
 	if p.isClosed {
 		p.mu.Unlock()
-		return
+		return errors.New("pool is closed")
 	}
 	close(p.inCh)
 	p.isClosed = true
@@ -82,4 +90,5 @@ func (p *Pool) Stop() {
 
 	p.wg.Wait()
 	fmt.Println("pool stopped")
+	return nil
 }
