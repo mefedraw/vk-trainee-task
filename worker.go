@@ -15,7 +15,7 @@ func NewWorker(id int) *Worker {
 	}
 }
 
-func (w *Worker) LaunchWorker(in chan string, stopCh chan struct{}, wg *sync.WaitGroup) {
+func (w *Worker) LaunchWorker(in <-chan string, stopCh chan struct{}, wg *sync.WaitGroup) {
 	go func() {
 		defer wg.Done()
 		for {

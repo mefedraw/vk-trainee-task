@@ -15,6 +15,7 @@ type Pool struct {
 	wg        *sync.WaitGroup
 	mu        sync.Mutex
 	workerNum int
+	isClosed  bool
 }
 
 func NewPool(wg *sync.WaitGroup) *Pool {
@@ -34,6 +35,12 @@ func (p *Pool) Run(n int) {
 }
 
 func (p *Pool) AddJob(str string) {
+	if p.workerNum == 0 {
+		panic("pool not started")
+	}
+	if p.isClosed {
+		panic("pool is closed")
+	}
 	p.inCh <- str
 }
 
@@ -57,7 +64,15 @@ func (p *Pool) RemoveWorker() {
 }
 
 func (p *Pool) Stop() {
+	p.mu.Lock()
+	if p.isClosed {
+		p.mu.Unlock()
+		panic("Pool already stopped")
+	}
 	close(p.inCh)
+	p.isClosed = true
+	p.mu.Unlock()
+
 	p.wg.Wait()
 	fmt.Println("pool stopped")
 }
